@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.*;
 
 public class Item implements Serializable
 {
@@ -6,6 +7,7 @@ public class Item implements Serializable
 	private String itemName;
 	private int startingPrice;
 	private int reservePrice;
+	private boolean active;
 
 	public Item (int auction_id, String itemName, int startingPrice, int reservePrice)
 	{
@@ -13,6 +15,7 @@ public class Item implements Serializable
 		this.itemName = itemName;
 		this.startingPrice = startingPrice;
 		this.reservePrice = reservePrice;
+		this.active = true;
 	}
 
 	public int getAuctionId()
@@ -33,5 +36,15 @@ public class Item implements Serializable
 	public int getReservePrice()
 	{
 		return reservePrice;
+	}
+
+	public boolean getActive()
+	{
+		return active;
+	}
+
+	public void setActive(boolean active)
+	{
+		this.active = active;
 	}
 }

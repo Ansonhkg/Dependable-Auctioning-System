@@ -30,18 +30,22 @@ public class BuyersClient implements Serializable
 			Map<Integer, Item> items = a.getItems();
 			Item item = items.get(auction_id);
 
-			System.out.println("Enter your bid more than " + item.getStartingPrice());
 			int placeBid;
 
 			do{
-				placeBid = reader.nextInt();
-				System.out.println("Enter your bid more than " + item.getStartingPrice());
-			}while(placeBid <= item.getStartingPrice());
+				if(item.getActive()){
+					System.out.println("Enter your bid more than " + item.getStartingPrice());
+					placeBid = reader.nextInt();
 
-			//Send bidding
-			a.bid(name, email, auction_id, placeBid);
+					a.bid(name, email, auction_id, placeBid);
+					listItems(a.getItems());	
+										
+				}else{
+					System.out.println("Sorry. This auction is closed.");
+					return;
+				}
+			}while(placeBid <= item.getStartingPrice() && item.getActive());
 
-			listItems(a.getItems());
 
 		}catch(Exception e){
 			e.printStackTrace();
@@ -51,15 +55,20 @@ public class BuyersClient implements Serializable
 
 	public static void listItems(Map<Integer, Item> itemsMap)
 	{
-		System.out.println("/========== Item List ==========/");
 		for(Map.Entry<Integer, Item> entry : itemsMap.entrySet()){
 			Item item = entry.getValue();
 
-			System.out.println("Auction ID:       |  " + item.getAuctionId());
-			System.out.println("Item Name:        |  " + item.getItemName());
-			System.out.println("Highest Bid:      |  " + item.getStartingPrice());
-			System.out.println("Reserve Price:    |  " + item.getReservePrice());
-			System.out.println("---------------------------------");
+			//Only show active items
+			if(item.getActive()){
+				System.out.println("/========== " + item.getItemName() + "==========/");
+				System.out.println("Auction ID:       |  " + item.getAuctionId());
+				System.out.println("Item Name:        |  " + item.getItemName());
+				System.out.println("Highest Bid:      |  " + item.getStartingPrice());
+				System.out.println("Reserve Price:    |  " + item.getReservePrice());
+			}else{
+				System.out.println("Sorry. This auction is closed.");
+				return;
+			}
 		}
 	}
 }
