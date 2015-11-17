@@ -1,18 +1,18 @@
 import java.io.*;
 
-public class Item  implements Serializable
+public class Item implements Serializable
 {
 	private int auction_id;
 	private String itemName;
 	private int startingPrice;
-	private int minAcceptablePrice;
+	private int reservePrice;
 
-	public Item (int auction_id, String itemName, int startingPrice, int minAcceptablePrice)
+	public Item (int auction_id, String itemName, int startingPrice, int reservePrice)
 	{
 		this.auction_id = auction_id;
 		this.itemName = itemName;
 		this.startingPrice = startingPrice;
-		this.minAcceptablePrice = minAcceptablePrice;
+		this.reservePrice = reservePrice;
 	}
 
 	public int getAuctionId()
@@ -30,8 +30,8 @@ public class Item  implements Serializable
 		return startingPrice;
 	}
 
-	public int getMinAcceptablePrice()
+	public int getReservePrice()
 	{
-		return minAcceptablePrice;
+		return reservePrice;
 	}
 }
