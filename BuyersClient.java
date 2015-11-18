@@ -10,11 +10,10 @@ public class BuyersClient implements Serializable
 		try{
 			Auction a = (Auction) Naming.lookup("AuctionService");
 			
-			listItems(a.getItems());
 
 			//Scan for user inputs
 			Scanner reader = new Scanner(System.in);
-			
+
 			System.out.println("Enter name: ");
 			String name = reader.nextLine();
 			
@@ -22,30 +21,55 @@ public class BuyersClient implements Serializable
 			String email = reader.nextLine();
 		
 			System.out.println("Hello, " + name + ".");
-			
-			System.out.println("Enter the auction id of the item you want to bid on: ");
-			int auction_id = reader.nextInt();
 
-			//Get the details from the given auction id
-			Map<Integer, Item> items = a.getItems();
-			Item item = items.get(auction_id);
+			String option = null;
 
-			int placeBid;
-
-			do{
-				if(item.getActive()){
-					System.out.println("Enter your bid more than " + item.getStartingPrice());
-					placeBid = reader.nextInt();
-
-					a.bid(name, email, auction_id, placeBid);
-					listItems(a.getItems());	
-										
-				}else{
-					System.out.println("Sorry. This auction is closed.");
-					return;
+			while(!"exit".equals(option)){
+				if(option==null){
+					System.out.println("---------------------------------");
+					System.out.println("Enter 'exit' to exit program");
+					System.out.println("Enter '1'    to browse items");
+					System.out.println("Enter '2'    to bid an auction");
+					System.out.println("---------------------------------");
 				}
-			}while(placeBid <= item.getStartingPrice() && item.getActive());
 
+				option = reader.nextLine();
+
+				if("1".equals(option)){
+					
+					listItems(a.getItems());
+
+					option = null;
+				}
+
+				if("2".equals(option)){
+					
+					System.out.println("Enter the auction id of the item you want to bid on: ");
+					int auction_id = reader.nextInt();
+
+					//Get the details from the given auction id
+					Map<Integer, Item> items = a.getItems();
+					Item item = items.get(auction_id);
+
+					int placeBid;
+					if(item.getActive()){
+						do{
+							
+							System.out.println("Enter your bid more than " + item.getStartingPrice());
+							placeBid = reader.nextInt();
+
+							a.bid(name, email, auction_id, placeBid);
+													
+						}while(placeBid <= item.getStartingPrice() && item.getActive());
+					}else{
+						System.out.println("Sorry. This auction is closed.");
+						return;
+					}
+					option = null;
+				}
+			}
+			reader.close();
+			
 
 		}catch(Exception e){
 			e.printStackTrace();
@@ -60,14 +84,11 @@ public class BuyersClient implements Serializable
 
 			//Only show active items
 			if(item.getActive()){
-				System.out.println("/========== " + item.getItemName() + "==========/");
+				System.out.println("/========== " + item.getItemName() + " ==========/");
 				System.out.println("Auction ID:       |  " + item.getAuctionId());
 				System.out.println("Item Name:        |  " + item.getItemName());
 				System.out.println("Highest Bid:      |  " + item.getStartingPrice());
 				System.out.println("Reserve Price:    |  " + item.getReservePrice());
-			}else{
-				System.out.println("Sorry. This auction is closed.");
-				return;
 			}
 		}
 	}
