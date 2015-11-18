@@ -88,7 +88,7 @@ public class BuyersClient implements Serializable
 				System.out.println("Auction ID:       |  " + item.getAuctionId());
 				System.out.println("Item Name:        |  " + item.getItemName());
 				System.out.println("Highest Bid:      |  " + item.getStartingPrice());
-				System.out.println("Reserve Price:    |  " + item.getReservePrice());
+				// System.out.println("Reserve Price:    |  " + item.getReservePrice());
 			}
 		}
 	}
