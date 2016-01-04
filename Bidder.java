@@ -4,14 +4,12 @@ import java.util.*;
 public class Bidder implements Serializable
 {
 	private int auction_id;
-	private String name;
-	private String email;
+	private User user;
 
-	public Bidder (int auction_id, String name, String email)
+	public Bidder (int auction_id, User user)
 	{
 		this.auction_id = auction_id;
-		this.name = name;
-		this.email = email;
+		this.user = user;
 	}
 
 	public int getAuctionId()
@@ -19,14 +17,9 @@ public class Bidder implements Serializable
 		return auction_id;
 	}
 
-	public String getName()
+	public User getUser()
 	{
-		return name;
-	}
-
-	public String getEmail()
-	{
-		return email;
+		return user;
 	}
 
 }

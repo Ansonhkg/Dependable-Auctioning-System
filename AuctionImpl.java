@@ -1,8 +1,15 @@
 import java.rmi.*;
 import java.rmi.server.*;
 import java.net.MalformedURLException;
+
+import java.security.*;
+import java.security.spec.*;
+import javax.crypto.*;
+import javax.crypto.spec.*;
+
 import java.util.*;
 import java.io.*;
+import java.nio.*;
 
 public class AuctionImpl extends UnicastRemoteObject implements Auction
 {
@@ -10,57 +17,82 @@ public class AuctionImpl extends UnicastRemoteObject implements Auction
 	public Map<Integer, Item> items = new HashMap<Integer, Item>();
 	public Map<Integer, Bidder> bidders = new HashMap<Integer, Bidder>();
 
+	public int randomNumber = 0;
+
 	public AuctionImpl() throws RemoteException{};
 
 	//Enable a seller to create a new auction.
 	//@param {int} startingPrice - Aka. current bid or highest bid.
 	//@param {int} reservePrice - Aka. Minimum acceptable price.
 	//@return - A unique auction identifier for the newly created auction.
-	public int createAuction(String itemName, int startingPrice, int reservePrice) throws RemoteException{
+	public synchronized int createAuction(int owner_id, String itemName, int startingPrice, int reservePrice) throws RemoteException{
 
-		System.out.println("createAuction Called");
+		Map<Integer, User> usersTable = AuctionServer.users;
+		User user = usersTable.get(owner_id);
 		
 		int auction_id = items.size();
 
-		items.put(auction_id, new Item(auction_id, itemName, startingPrice, reservePrice));
+		Item item = new Item(auction_id, owner_id, itemName, startingPrice, reservePrice);
+		
+		items.put(auction_id, item);
+
+		System.out.println("> User { " + user.getName() + " } created new auction { " + itemName + "|" + auction_id + " }");
 
 		return auction_id;
 	};
 
-	//Close auction and return winner's details.
+	//Close an auction
 	// @param {int} auction_id - auction that you want to close.
 	// @return - Winner's details.
-	public Bidder closeAuction(int auction_id) throws RemoteException{
+	public Boolean closeAuction(int user_id, int auction_id) throws RemoteException{
 		
+		Map<Integer, User> usersTable = AuctionServer.users;
+		User user = usersTable.get(user_id);
+
 		//Get the current item according to the given ID
 		Item item = items.get(auction_id);
 
-		//Set item to inactive
-		item.setActive(false);
+		//Get the ownerId of the item
+		int ownerId = item.getOwnerId();
 
-		Bidder bidder = bidders.get(auction_id);
+		//Check if the request is from the item owner
+		if(ownerId == user_id){
+			//Set item to inactive
+			item.setActive(false);
+			System.out.println("> User { " + user.getName() + " } closed auction { " + item.getItemName() + "|" + auction_id + " }");
+			return true;
+		}
 
-		return bidder;
+		return false;
+
 	};
+
+	public Bidder getWinner(int auction_id) throws RemoteException{
+		return bidders.get(auction_id);
+	}
 
 	
 	//----- Potential Buyers -----//
 	//Enable potential buyers to bid for auctioned items.
-	public void bid(String name, String email, int auction_id, int placeBid) throws RemoteException{
+	public synchronized void bid(int user_id, int auction_id, int new_bid) throws RemoteException{
 		
-		System.out.println("Name: " + name);
-		System.out.println("Email: " + email);
+		Map<Integer, User> usersTable = AuctionServer.users;
+		User user = usersTable.get(user_id);
 
 		//Get the current item according to the given ID
 		Item item = items.get(auction_id);
-		
+		int oldBid = item.getCurrentBid();
+
 		//If item is active
 		if(item.getActive()){
+			
 			//Update new higest bid in items table
-			items.put(auction_id, new Item(auction_id, item.getItemName(), placeBid, item.getReservePrice()));
+			item.setWinnerId(user_id);
+			item.setCurrentBid(new_bid);
 
 			//Add new bidder to bidders table
-			bidders.put(auction_id, new Bidder(auction_id, name, email));
+			bidders.put(auction_id, new Bidder(auction_id, user));
+			System.out.println("> User { " + user.getName() + " } has bid item { " + item.getItemName() + "  } from " + oldBid + " to " + item.getCurrentBid());
 		}
 		
 	};
@@ -74,4 +106,59 @@ public class AuctionImpl extends UnicastRemoteObject implements Auction
 	public Map<Integer, Bidder> getBidders() throws RemoteException{
 		return bidders;
 	};
+
+
+	//CRYPTO CLIENT AUTHENTICATION
+	public Key getPublicKey() throws RemoteException{
+		return AuctionServer.keyManager.getPublicKey();
+	};
+
+	public synchronized byte[] getChallenge(byte[] cipherSharedKey) throws RemoteException, Exception{
+		
+		Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+		cipher.init(Cipher.DECRYPT_MODE, AuctionServer.keyManager.getPrivateKey());
+		byte[] sKeyBytes = cipher.doFinal(cipherSharedKey);
+
+		//Turn 'bytes' key back to 'SecretKey' object
+		SecretKey sKey = new SecretKeySpec(sKeyBytes, 0, sKeyBytes.length, "AES");
+
+		//Use the shared key to createChallenge
+		Cipher cipherAES = Cipher.getInstance("AES/ECB/PKCS5Padding");
+		cipherAES.init(Cipher.ENCRYPT_MODE, sKey);
+		
+		//Generate random number
+		randomNumber = (int) Math.floor(Math.random() * 101);
+		byte[] randomNumberBytes = ByteBuffer.allocate(4).putInt(randomNumber).array();
+		
+		byte[] cipherChallenge = cipherAES.doFinal(randomNumberBytes);
+
+		return cipherChallenge;
+		
+	}
+
+	//Check if the server's random number is the same as the received number from the client
+	public boolean verify(int challengeNum) throws RemoteException{
+		return randomNumber == challengeNum;
+	}
+
+	//ACCESS CONTROL
+	public User login(User checkUser) throws RemoteException{
+		Map<Integer, User> usersTable = AuctionServer.users;
+
+		for(int i=0; i < usersTable.size(); i++){
+			User user = usersTable.get(i);
+
+			//Return if user exists in the database
+			Boolean userExist = (checkUser.getName()).equals(user.getName());
+			Boolean correctPassword = (checkUser.getPassword()).equals(user.getPassword());
+
+			if(userExist && correctPassword){
+				System.out.println("> User { " + user.getName() + " } is logged in.");
+				return user;
+			}
+		}
+
+		return null;
+	}
+
 }
