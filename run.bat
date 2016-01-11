@@ -1,0 +1,1 @@
+java -classpath .;jgroups-3.4.0.Final.jar; AuctionServer

@@ -1,0 +1,1 @@
+javac -cp "jgroups-3.4.0.Final.jar;" *.java

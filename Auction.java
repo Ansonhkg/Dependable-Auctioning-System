@@ -10,13 +10,13 @@ import java.io.*;
 
 public interface Auction extends Remote{
 	
-	public int createAuction(int userId, String itemName, int startingPrice, int reservePrice) throws RemoteException;
+	public int createAuction(int userId, String itemName, int startingPrice, int reservePrice) throws RemoteException, Exception;
 
-	public Boolean closeAuction(int user_id, int auction_id) throws RemoteException;
+	public Boolean closeAuction(int user_id, int auction_id) throws Exception;
 
 	public Bidder getWinner(int auction_id) throws RemoteException;
 
-	public void bid(int userId, int auction_id, int new_bid) throws RemoteException;
+	public void bid(int userId, int auction_id, int new_bid) throws Exception;
 
 	public Map<Integer, Item> getItems() throws RemoteException;
 

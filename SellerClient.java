@@ -40,89 +40,109 @@ public class SellerClient
 				}
 
 			}else{
-				System.out.println("BuyersClient does not have access right.");
+				System.out.println("SellerClient does not have access right.");
 			}
 
 		}catch(Exception e){
-			e.printStackTrace();
+			reconnect();
+			// e.printStackTrace();
 		}
 
 	}
 
+	//Passive 
+	public static void reconnect()
+	{
+		try{
+			a = (Auction) Naming.lookup("AuctionService");
+			System.out.println("# System was down. Reconnected.");
+			System.out.println("\n> Hi, " + user.getName() + ". Welcome back!");
+			run();
+		}catch(Exception e){
+			System.out.println("Reconnection failed.");
+			e.printStackTrace();
+		}
+		
+	}
+
 	public static void run() throws Exception
 	{
+		try{
+			String option = null;
 
-		String option = null;
-
-		while(!"exit".equals(option)){
-			
-			if(option==null){
-				System.out.println("---------------------------------");
-				System.out.println("Enter 'exit' to exit program");
-				System.out.println("Enter '1'    to create an auction");
-				System.out.println("Enter '2'    to close an auction");
-				System.out.println("---------------------------------");
-			}
-
-			option = reader.nextLine();
-
-			if("1".equals(option)){
-				System.out.print("Enter item name: ");
-				String itemName = reader.nextLine();
-
-				System.out.print("Enter Starting Price: ");
-				int startingPrice = reader.nextInt();
-
-				System.out.print("Enter Minimum Acceptable Price: ");
-				int reservePrice = reader.nextInt();
-
-				int auction_id = a.createAuction(user.getId(), itemName, startingPrice, reservePrice);
-
+			while(!"exit".equals(option)){
 				
-				System.out.println("******************************");
-				System.out.println("Your Auction ID     : " + auction_id);
-				System.out.println("Your Item Name      : " + itemName);
-				System.out.println("Your Starting Price : " + startingPrice);
-				System.out.println("Your Reserve Price  : " + reservePrice);
-				System.out.println("******************************");
-
-				option = null;
-			}
-
-			if("2".equals(option)){
-				System.out.print("Enter auction ID: ");
-				int auction_id = reader.nextInt();
-				
-				//Get the details from the given auction id
-				Map<Integer, Item> items = a.getItems();
-				Item item = items.get(auction_id);
-
-				Boolean auctionClosed = a.closeAuction(user.getId(), auction_id);
-				
-				if(auctionClosed){
-
-					System.out.println("Item { " + item.getItemName() + " } is closed.");
-					
-					//If reserve price has not been reached
-					if(item.getReservePrice() > item.getCurrentBid()){
-						System.out.println("the reserve price has not been reached");
-					}else{
-						Bidder winner = a.getWinner(auction_id);
-
-						//Show winner's details
-						System.out.println("Highest Bid: " + item.getCurrentBid());
-						System.out.println("Winner's Name: " + winner.getUser().getName());
-						System.out.println("Winner's Email: " + winner.getUser().getEmail());
-					}
-
-				}else{
-					System.out.println("Only the owner of this item can close the auction.");
+				if(option==null){
+					System.out.println("---------------------------------");
+					System.out.println("Enter 'exit' to exit program");
+					System.out.println("Enter '1'    to create an auction");
+					System.out.println("Enter '2'    to close an auction");
+					System.out.println("---------------------------------");
 				}
 
+				option = reader.nextLine();
 
-				option = null;
+				if("1".equals(option)){
+					System.out.print("Enter item name: ");
+					String itemName = reader.nextLine();
+
+					System.out.print("Enter Starting Price: ");
+					int startingPrice = reader.nextInt();
+
+					System.out.print("Enter Minimum Acceptable Price: ");
+					int reservePrice = reader.nextInt();
+
+					int auction_id = a.createAuction(user.getId(), itemName, startingPrice, reservePrice);
+
+					
+					System.out.println("******************************");
+					System.out.println("Your Auction ID     : " + auction_id);
+					System.out.println("Your Item Name      : " + itemName);
+					System.out.println("Your Starting Price : " + startingPrice);
+					System.out.println("Your Reserve Price  : " + reservePrice);
+					System.out.println("******************************");
+
+					option = null;
+				}
+
+				if("2".equals(option)){
+					System.out.print("Enter auction ID: ");
+					int auction_id = reader.nextInt();
+					
+					//Get the details from the given auction id
+					Map<Integer, Item> items = a.getItems();
+					Item item = items.get(auction_id);
+
+					Boolean auctionClosed = a.closeAuction(user.getId(), auction_id);
+					
+					if(auctionClosed){
+
+						System.out.println("Item { " + item.getItemName() + " } is closed.");
+						
+						//If reserve price has not been reached
+						if(item.getReservePrice() > item.getCurrentBid()){
+							System.out.println("the reserve price has not been reached");
+						}else{
+							Bidder winner = a.getWinner(auction_id);
+
+							//Show winner's details
+							System.out.println("Highest Bid: " + item.getCurrentBid());
+							System.out.println("Winner's Name: " + winner.getUser().getName());
+							System.out.println("Winner's Email: " + winner.getUser().getEmail());
+						}
+
+					}else{
+						System.out.println("Only the owner of this item can close the auction.");
+					}
+
+
+					option = null;
+				}
 			}
+			reader.close();
+			
+		}catch(Exception e){
+			reconnect();
 		}
-		reader.close();
 	}
 }

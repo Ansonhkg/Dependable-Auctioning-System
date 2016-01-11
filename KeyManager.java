@@ -6,21 +6,26 @@ import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
-public final class KeyManager
+import java.io.*;
+
+public final class KeyManager implements Serializable
 {
 	private Key privateKey = null; //This key stays on the server
 	private Key publicKey = null; //This key is ready to be distributed to clients
 
 	public KeyManager() throws RemoteException, NoSuchAlgorithmException{
 
-		System.out.println("...Generating RSA key pair");
-		KeyPair kp = this.genKeyPair();
+		if(privateKey == null){
+			System.out.println("...Generating RSA key pair");
+			KeyPair kp = this.genKeyPair();
 
-		System.out.println("...Generating public key");
-		this.publicKey = kp.getPublic();
+			System.out.println("...Generating public key");
+			this.publicKey = kp.getPublic();
 
-		System.out.println("...Generating private key");
-		this.privateKey = kp.getPrivate();
+			System.out.println("...Generating private key");
+			this.privateKey = kp.getPrivate();
+		}
+		
 	};
 
 	public Key getPublicKey()

@@ -10,12 +10,10 @@ import javax.crypto.spec.*;
 import java.util.*;
 import java.io.*;
 import java.nio.*;
+import org.jgroups.blocks.*;
 
 public class AuctionImpl extends UnicastRemoteObject implements Auction
 {
-
-	public Map<Integer, Item> items = new HashMap<Integer, Item>();
-	public Map<Integer, Bidder> bidders = new HashMap<Integer, Bidder>();
 
 	public int randomNumber = 0;
 
@@ -25,41 +23,41 @@ public class AuctionImpl extends UnicastRemoteObject implements Auction
 	//@param {int} startingPrice - Aka. current bid or highest bid.
 	//@param {int} reservePrice - Aka. Minimum acceptable price.
 	//@return - A unique auction identifier for the newly created auction.
-	public synchronized int createAuction(int owner_id, String itemName, int startingPrice, int reservePrice) throws RemoteException{
+	public synchronized int createAuction(int owner_id, String itemName, int startingPrice, int reservePrice) throws RemoteException, Exception{
 
 		Map<Integer, User> usersTable = AuctionServer.users;
+		
 		User user = usersTable.get(owner_id);
 		
-		int auction_id = items.size();
+		int auction_id = AuctionServer.items.size();
 
 		Item item = new Item(auction_id, owner_id, itemName, startingPrice, reservePrice);
 		
-		items.put(auction_id, item);
-
-		System.out.println("> User { " + user.getName() + " } created new auction { " + itemName + "|" + auction_id + " }");
+		AuctionServer.disp.callRemoteMethods(null, "createAuction", new Object[]{item}, new Class[]{Item.class}, new RequestOptions(ResponseMode.GET_ALL, 5000));
 
 		return auction_id;
+
 	};
 
-	//Close an auction
+	// Close an auction
 	// @param {int} auction_id - auction that you want to close.
 	// @return - Winner's details.
-	public Boolean closeAuction(int user_id, int auction_id) throws RemoteException{
+	public Boolean closeAuction(int user_id, int auction_id) throws Exception{
 		
 		Map<Integer, User> usersTable = AuctionServer.users;
 		User user = usersTable.get(user_id);
 
 		//Get the current item according to the given ID
-		Item item = items.get(auction_id);
+		Item item = AuctionServer.items.get(auction_id);
 
 		//Get the ownerId of the item
 		int ownerId = item.getOwnerId();
 
 		//Check if the request is from the item owner
 		if(ownerId == user_id){
-			//Set item to inactive
-			item.setActive(false);
-			System.out.println("> User { " + user.getName() + " } closed auction { " + item.getItemName() + "|" + auction_id + " }");
+			
+			AuctionServer.disp.callRemoteMethods(null, "closeAuction", new Object[]{user_id, auction_id}, new Class[]{int.class, int.class}, new RequestOptions(ResponseMode.GET_ALL, 5000));
+						
 			return true;
 		}
 
@@ -68,43 +66,39 @@ public class AuctionImpl extends UnicastRemoteObject implements Auction
 	};
 
 	public Bidder getWinner(int auction_id) throws RemoteException{
-		return bidders.get(auction_id);
+		return AuctionServer.bidders.get(auction_id);
 	}
 
 	
 	//----- Potential Buyers -----//
 	//Enable potential buyers to bid for auctioned items.
-	public synchronized void bid(int user_id, int auction_id, int new_bid) throws RemoteException{
+	public synchronized void bid(int user_id, int auction_id, int new_bid) throws Exception{
 		
 		Map<Integer, User> usersTable = AuctionServer.users;
 		User user = usersTable.get(user_id);
 
 		//Get the current item according to the given ID
-		Item item = items.get(auction_id);
-		int oldBid = item.getCurrentBid();
+		Item item = AuctionServer.items.get(auction_id);
 
 		//If item is active
 		if(item.getActive()){
 			
 			//Update new higest bid in items table
-			item.setWinnerId(user_id);
-			item.setCurrentBid(new_bid);
-
-			//Add new bidder to bidders table
-			bidders.put(auction_id, new Bidder(auction_id, user));
-			System.out.println("> User { " + user.getName() + " } has bid item { " + item.getItemName() + "  } from " + oldBid + " to " + item.getCurrentBid());
+			//Add new bidder to bidders table			
+			AuctionServer.disp.callRemoteMethods(null, "bid", new Object[]{user_id, auction_id, new_bid}, new Class[]{int.class, int.class, int.class}, new RequestOptions(ResponseMode.GET_ALL, 5000));
+			
 		}
 		
 	};
 
 	//browse a list of currently active auctions with their current highest bid (But not the reserved price, which is secret.)
 	public Map<Integer, Item> getItems() throws RemoteException{
-		return items;
+		return AuctionServer.items;
 	};
 
 	//List bidders of a specific auction 
 	public Map<Integer, Bidder> getBidders() throws RemoteException{
-		return bidders;
+		return AuctionServer.bidders;
 	};
 
 

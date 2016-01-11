@@ -45,62 +45,83 @@ public class BuyersClient
 			}
 
 		}catch(Exception e){
-			e.printStackTrace();
+			reconnect();
+			// e.printStackTrace();
 		}
 
 	}
 
+	public static void reconnect()
+	{
+		try{
+			a = (Auction) Naming.lookup("AuctionService");
+			System.out.println("# System was down. Reconnected.");
+			System.out.println("\n> Hi, " + user.getName() + ". Welcome back!");
+			run();
+		}catch(Exception e){
+			System.out.println("Reconnection failed.");
+			e.printStackTrace();
+		}
+		
+	}
+
 	public static void run() throws Exception
 	{
+		try{
+			
+			String option = null;
 
-		String option = null;
-
-		while(!"exit".equals(option)){
-			if(option==null){
-				System.out.println("---------------------------------");
-				System.out.println("Enter 'exit' to exit program");
-				System.out.println("Enter '1'    to browse items");
-				System.out.println("Enter '2'    to bid an auction");
-				System.out.println("---------------------------------");
-			}
-
-			option = reader.nextLine();
-
-			if("1".equals(option)){
-				
-				listItems(a.getItems());
-
-				option = null;
-			}
-
-			if("2".equals(option)){
-				
-				System.out.println("Enter the auction id of the item you want to bid on: ");
-				int auction_id = reader.nextInt();
-
-				//Get the details from the given auction id
-				Map<Integer, Item> items = a.getItems();
-				Item item = items.get(auction_id);
-
-				int placeBid;
-				if(item.getActive()){
-					do{
-						
-						System.out.println("Enter your bid more than " + item.getCurrentBid());
-						placeBid = reader.nextInt();
-
-						a.bid(user.getId(), auction_id, placeBid);
-						// a.bid(name, email, auction_id, placeBid);
-												
-					}while(placeBid <= item.getCurrentBid() && item.getActive());
-				}else{
-					System.out.println("Sorry. This auction is closed.");
-					return;
+			while(!"exit".equals(option)){
+				if(option==null){
+					System.out.println("---------------------------------");
+					System.out.println("Enter 'exit' to exit program");
+					System.out.println("Enter '1'    to browse items");
+					System.out.println("Enter '2'    to bid an auction");
+					System.out.println("---------------------------------");
 				}
-				option = null;
+
+				option = reader.nextLine();
+
+				if("1".equals(option)){
+					
+					listItems(a.getItems());
+
+					option = null;
+				}
+
+				if("2".equals(option)){
+					
+					System.out.println("Enter the auction id of the item you want to bid on: ");
+					int auction_id = reader.nextInt();
+
+					//Get the details from the given auction id
+					Map<Integer, Item> items = a.getItems();
+					Item item = items.get(auction_id);
+
+					int placeBid;
+					if(item.getActive()){
+						do{
+							
+							System.out.println("Enter your bid more than " + item.getCurrentBid());
+							placeBid = reader.nextInt();
+
+							a.bid(user.getId(), auction_id, placeBid);
+							// a.bid(name, email, auction_id, placeBid);
+													
+						}while(placeBid <= item.getCurrentBid() && item.getActive());
+					}else{
+						System.out.println("Sorry. This auction is closed.");
+						return;
+					}
+					option = null;
+				}
 			}
+			reader.close();
+
+		}catch(Exception e){
+			reconnect();
 		}
-		reader.close();
+		
 	}
 
 	public static void listItems(Map<Integer, Item> itemsMap)
